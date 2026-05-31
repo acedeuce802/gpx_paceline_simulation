@@ -1,0 +1,1238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Paceline Optimizer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0d1117;
+    --bg2: #161b22;
+    --bg3: #21262d;
+    --border: #30363d;
+    --border2: #484f58;
+    --text: #e6edf3;
+    --text2: #8b949e;
+    --text3: #6e7681;
+    --accent: #58a6ff;
+    --accent2: #1f6feb;
+    --green: #3fb950;
+    --green2: #238636;
+    --orange: #f0883e;
+    --red: #f85149;
+    --yellow: #d29922;
+    --purple: #bc8cff;
+    --mono: 'Space Mono', monospace;
+    --sans: 'DM Sans', sans-serif;
+    --radius: 8px;
+    --radius2: 12px;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 14px;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  .header {
+    border-bottom: 1px solid var(--border);
+    padding: 20px 32px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: var(--bg2);
+  }
+  .logo {
+    width: 36px; height: 36px;
+    background: var(--accent2);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .logo svg { width: 20px; height: 20px; fill: #fff; }
+  .header h1 { font-family: var(--mono); font-size: 16px; color: var(--text); font-weight: 700; letter-spacing: -0.5px; }
+  .header p { font-size: 12px; color: var(--text2); }
+
+  .main { display: grid; grid-template-columns: 380px 1fr; min-height: calc(100vh - 73px); }
+  .sidebar { border-right: 1px solid var(--border); padding: 24px; overflow-y: auto; background: var(--bg2); }
+  .content { padding: 24px; overflow-y: auto; }
+
+  .card { background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius2); margin-bottom: 16px; overflow: hidden; }
+  .card-head { padding: 12px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .card-head h3 { font-family: var(--mono); font-size: 11px; font-weight: 700; color: var(--text2); text-transform: uppercase; letter-spacing: 1px; }
+  .card-body { padding: 16px; }
+
+  label { font-size: 12px; color: var(--text2); display: block; margin-bottom: 4px; }
+  input[type="text"], input[type="number"], select {
+    width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius);
+    color: var(--text); padding: 8px 10px; font-size: 13px; font-family: var(--sans);
+    outline: none; transition: border-color 0.15s;
+  }
+  input[type="text"]:focus, input[type="number"]:focus, select:focus { border-color: var(--accent); }
+  select option { background: var(--bg3); }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+  .form-row.three { grid-template-columns: 1fr 1fr 1fr; }
+  .form-group { margin-bottom: 10px; }
+
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px;
+    border-radius: var(--radius); border: 1px solid var(--border2); background: var(--bg);
+    color: var(--text); font-size: 13px; font-family: var(--sans); cursor: pointer;
+    transition: all 0.15s; white-space: nowrap;
+  }
+  .btn:hover { background: var(--bg3); border-color: var(--border2); }
+  .btn-primary { background: var(--accent2); border-color: var(--accent2); color: #fff; font-weight: 500; }
+  .btn-primary:hover { background: #388bfd; border-color: #388bfd; }
+  .btn-green { background: var(--green2); border-color: var(--green2); color: #fff; font-weight: 500; }
+  .btn-green:hover { background: #2ea043; }
+  .btn-sm { padding: 5px 10px; font-size: 12px; }
+  .btn-danger { color: var(--red); border-color: transparent; background: transparent; }
+  .btn-danger:hover { background: rgba(248,81,73,0.1); border-color: var(--red); }
+
+  .rider-card {
+    background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius2);
+    margin-bottom: 10px; overflow: hidden;
+  }
+  .rider-card-head {
+    padding: 10px 14px; display: flex; align-items: center; gap: 10px; cursor: pointer;
+    transition: background 0.15s;
+  }
+  .rider-card-head:hover { background: var(--bg3); }
+  .rider-num {
+    width: 28px; height: 28px; border-radius: 50%; background: var(--accent2);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--mono); font-size: 12px; font-weight: 700; color: #fff; flex-shrink: 0;
+  }
+  .rider-name-display { flex: 1; font-size: 13px; font-weight: 500; }
+  .rider-card-body { padding: 14px; border-top: 1px solid var(--border); display: none; }
+  .rider-card.open .rider-card-body { display: block; }
+
+  .upload-zone {
+    border: 2px dashed var(--border2); border-radius: var(--radius2); padding: 24px;
+    text-align: center; cursor: pointer; transition: all 0.15s; margin-bottom: 10px;
+  }
+  .upload-zone:hover, .upload-zone.drag { border-color: var(--accent); background: rgba(88,166,255,0.05); }
+  .upload-zone input { display: none; }
+  .upload-zone svg { width: 32px; height: 32px; stroke: var(--text3); margin-bottom: 8px; }
+  .upload-zone p { font-size: 12px; color: var(--text2); }
+  .upload-zone .filename { font-family: var(--mono); font-size: 11px; color: var(--green); }
+
+  #elev-canvas { width: 100%; height: 100px; display: block; }
+
+  .results-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+  .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
+  .stat { background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px; }
+  .stat-label { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.5px; font-family: var(--mono); margin-bottom: 4px; }
+  .stat-value { font-family: var(--mono); font-size: 20px; font-weight: 700; color: var(--text); }
+  .stat-unit { font-size: 11px; color: var(--text2); }
+
+  .timeline { margin-bottom: 24px; }
+  .timeline-label { font-size: 11px; color: var(--text3); font-family: var(--mono); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+  .tl-bar-wrap { display: flex; align-items: stretch; border-radius: var(--radius); overflow: hidden; height: 40px; margin-bottom: 6px; }
+  .tl-seg {
+    display: flex; align-items: center; justify-content: center; position: relative;
+    font-family: var(--mono); font-size: 10px; color: rgba(255,255,255,0.9);
+    transition: filter 0.15s; cursor: default; overflow: hidden;
+    font-weight: 700;
+  }
+  .tl-seg:hover { filter: brightness(1.2); }
+
+  .pull-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .pull-table th { font-family: var(--mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text3); padding: 8px 12px; text-align: left; border-bottom: 1px solid var(--border); }
+  .pull-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); }
+  .pull-table tr:last-child td { border-bottom: none; }
+  .pull-table tr:hover td { background: rgba(255,255,255,0.02); }
+  .wbal-bar { height: 6px; background: var(--border); border-radius: 3px; margin-top: 3px; overflow: hidden; }
+  .wbal-fill { height: 100%; border-radius: 3px; transition: width 0.3s; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-family: var(--mono); font-size: 10px; font-weight: 700; }
+  .badge-blue { background: rgba(88,166,255,0.15); color: var(--accent); }
+  .badge-green { background: rgba(63,185,80,0.15); color: var(--green); }
+  .badge-orange { background: rgba(240,136,62,0.15); color: var(--orange); }
+  .badge-red { background: rgba(248,81,73,0.15); color: var(--red); }
+
+  #wbal-canvas { width: 100%; height: 160px; display: block; }
+
+  .empty { text-align: center; padding: 60px 20px; color: var(--text3); }
+  .empty svg { width: 48px; height: 48px; stroke: var(--text3); margin: 0 auto 12px; display: block; }
+  .empty h3 { font-size: 16px; color: var(--text2); margin-bottom: 6px; }
+  .empty p { font-size: 13px; }
+
+  .tooltip { position: absolute; background: var(--bg3); border: 1px solid var(--border2); border-radius: var(--radius); padding: 6px 10px; font-size: 12px; pointer-events: none; z-index: 100; white-space: nowrap; }
+
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  .divider { border: none; border-top: 1px solid var(--border); margin: 14px 0; }
+  .info-text { font-size: 11px; color: var(--text3); line-height: 1.5; }
+
+  /* Mode selector */
+  .mode-option {
+    display: flex; align-items: flex-start; gap: 10px; cursor: pointer;
+    padding: 10px; border-radius: var(--radius); border: 1px solid var(--border);
+    transition: all 0.15s; margin-bottom: 8px;
+  }
+  .mode-option:hover { border-color: var(--border2); background: rgba(255,255,255,0.02); }
+  .mode-option input[type="radio"] { margin-top: 2px; flex-shrink: 0; accent-color: var(--accent); }
+  .mode-option.selected { border-color: var(--accent); background: rgba(88,166,255,0.05); }
+  .mode-title { font-size: 13px; font-weight: 500; color: var(--text); }
+  .mode-desc { font-size: 11px; color: var(--text3); margin-top: 2px; }
+
+  /* Comparison card */
+  .compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+  .compare-box { border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; }
+  .compare-box.winner { border-color: var(--green); background: rgba(63,185,80,0.05); }
+  .compare-box.runner { border-color: var(--border); opacity: 0.7; }
+  .compare-label { font-family: var(--mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text3); margin-bottom: 4px; }
+  .compare-time { font-family: var(--mono); font-size: 22px; font-weight: 700; }
+  .compare-winner-badge { display: inline-block; margin-left: 6px; font-size: 10px; background: rgba(63,185,80,0.2); color: var(--green); padding: 1px 6px; border-radius: 10px; font-family: var(--mono); vertical-align: middle; }
+
+  @media (max-width: 900px) {
+    .main { grid-template-columns: 1fr; }
+    .sidebar { border-right: none; border-bottom: 1px solid var(--border); }
+    .stat-grid { grid-template-columns: 1fr 1fr; }
+    .compare-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">
+    <svg viewBox="0 0 24 24"><path d="M12 2a5 5 0 100 10A5 5 0 0012 2zM5 17c0-2.7 3.1-5 7-5s7 2.3 7 5v1H5v-1z"/><path d="M19 8c1.7 0 3 1.3 3 3s-1.3 3-3 3M5 8C3.3 8 2 9.3 2 11s1.3 3 3 3"/></svg>
+  </div>
+  <div>
+    <h1>Paceline Optimizer</h1>
+    <p>Optimal pull schedule using road load physics &amp; W' balance model</p>
+  </div>
+</div>
+
+<div class="main">
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+
+    <!-- Segment -->
+    <div class="card">
+      <div class="card-head">
+        <h3>Segment</h3>
+        <span id="gpx-status" class="badge badge-orange">No GPX</span>
+      </div>
+      <div class="card-body">
+        <div class="upload-zone" id="drop-zone">
+          <input type="file" id="gpx-file" accept=".gpx">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+          <p>Drop a .gpx file here<br>or <u>click to browse</u></p>
+          <p class="filename" id="gpx-filename"></p>
+        </div>
+        <canvas id="elev-canvas"></canvas>
+        <div class="form-row" style="margin-top:10px">
+          <div>
+            <label>Distance</label>
+            <div style="font-family:var(--mono);font-size:14px;color:var(--accent)" id="seg-dist">—</div>
+          </div>
+          <div>
+            <label>Elevation gain</label>
+            <div style="font-family:var(--mono);font-size:14px;color:var(--accent)" id="seg-elev">—</div>
+          </div>
+        </div>
+        <hr class="divider">
+        <p class="info-text" style="margin-bottom:8px">Or manually enter a flat segment:</p>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Distance (km)</label>
+            <input type="number" id="manual-dist" value="5" min="0.5" max="200" step="0.5">
+          </div>
+          <div class="form-group">
+            <label>Avg grade (%)</label>
+            <input type="number" id="manual-grade" value="0" min="-15" max="25" step="0.1">
+          </div>
+        </div>
+        <button class="btn btn-sm" onclick="useManualSegment()">Use manual segment</button>
+      </div>
+    </div>
+
+    <!-- Conditions -->
+    <div class="card">
+      <div class="card-head"><h3>Conditions</h3></div>
+      <div class="card-body">
+        <div class="form-row three">
+          <div class="form-group">
+            <label>Wind (km/h)</label>
+            <input type="number" id="wind-speed" value="0" min="-40" max="40" step="1">
+          </div>
+          <div class="form-group">
+            <label>Temp (°C)</label>
+            <input type="number" id="temp" value="20" min="-10" max="45" step="1">
+          </div>
+          <div class="form-group">
+            <label>Altitude (m)</label>
+            <input type="number" id="altitude" value="200" min="0" max="3000" step="50">
+          </div>
+        </div>
+        <p class="info-text">Wind: positive = headwind, negative = tailwind</p>
+      </div>
+    </div>
+
+    <!-- Riders -->
+    <div class="card">
+      <div class="card-head">
+        <h3>Riders <span id="rider-count" style="color:var(--text2)">( 0 )</span></h3>
+        <button class="btn btn-sm btn-green" onclick="addRider()">+ Add Rider</button>
+      </div>
+      <div class="card-body" id="riders-container">
+        <p class="info-text">Add at least 2 riders. Order = paceline position.</p>
+      </div>
+    </div>
+
+    <!-- Strategy -->
+    <div class="card">
+      <div class="card-head"><h3>Strategy</h3></div>
+      <div class="card-body" style="padding-bottom:8px">
+        <label class="mode-option selected" id="mode-opt-auto">
+          <input type="radio" name="pl-mode" value="auto" checked onchange="updateModeUI()">
+          <div>
+            <div class="mode-title">Auto — pick fastest</div>
+            <div class="mode-desc">Runs both strategies, compares times, and shows the faster result for the last rider.</div>
+          </div>
+        </label>
+        <label class="mode-option" id="mode-opt-leadout">
+          <input type="radio" name="pl-mode" value="leadout" onchange="updateModeUI()">
+          <div>
+            <div class="mode-title">Lead-out Train</div>
+            <div class="mode-desc">Each rider pulls once then peels off permanently. Last rider in list is protected and sprints to the line.</div>
+          </div>
+        </label>
+        <label class="mode-option" id="mode-opt-rotating">
+          <input type="radio" name="pl-mode" value="rotating" onchange="updateModeUI()">
+          <div>
+            <div class="mode-title">Rotating Paceline</div>
+            <div class="mode-desc">All riders take multiple turns at the front. Better for longer efforts where recovery between pulls matters.</div>
+          </div>
+        </label>
+      </div>
+    </div>
+
+    <!-- Optimize -->
+    <button class="btn btn-primary" style="width:100%;justify-content:center;padding:12px" onclick="runOptimizer()">
+      ▶ Calculate Optimal Paceline
+    </button>
+  </div>
+
+  <!-- CONTENT / RESULTS -->
+  <div class="content" id="results-panel">
+    <div class="empty">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/>
+        <path d="M12 8v4l3 3"/>
+      </svg>
+      <h3>No results yet</h3>
+      <p>Add a segment, set conditions, add riders, then click Calculate.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===================== STATE =====================
+let riders = [];
+let segmentPoints = [];
+let riderColors = ['#58a6ff','#3fb950','#f0883e','#bc8cff','#f85149','#d29922','#39d353','#ff7b72','#79c0ff','#d2a8ff'];
+let riderId = 0;
+
+// ===================== PHYSICS CONSTANTS =====================
+const CRR = 0.004;
+const CDA = 0.32;
+const G = 9.81;
+const DRAFT_SAVINGS = [0, 0.30, 0.40, 0.45, 0.48, 0.50];
+
+function getDraftFactor(pos) {
+  return 1 - (DRAFT_SAVINGS[Math.min(pos, DRAFT_SAVINGS.length - 1)] || 0.50);
+}
+
+function airDensity(tempC, altM) {
+  const T = tempC + 273.15;
+  const P = 101325 * Math.pow(1 - 0.0000225577 * altM, 5.25588);
+  return P / (287.058 * T);
+}
+
+function powerForSpeed(v, grade, rho, massKg, windMps) {
+  const vair = v + windMps;
+  const aero = 0.5 * rho * CDA * vair * vair * v;
+  const rolling = CRR * massKg * G * Math.cos(Math.atan(grade)) * v;
+  const gravity = massKg * G * grade * v;
+  return aero + rolling + gravity;
+}
+
+function speedForPower(power, grade, rho, massKg, windMps) {
+  if (power <= 0) return 0.01;
+  let lo = 0.1, hi = 30;
+  for (let i = 0; i < 50; i++) {
+    const mid = (lo + hi) / 2;
+    powerForSpeed(mid, grade, rho, massKg, windMps) < power ? lo = mid : hi = mid;
+  }
+  return (lo + hi) / 2;
+}
+
+// W' balance model (Skiba 2012)
+function wbalAfterDt(wbal, wMax, CP, P, dt) {
+  if (P > CP) {
+    return wbal - (P - CP) * dt;
+  } else {
+    const tau = 546 * Math.exp(-0.01 * (CP - P)) + 316;
+    return wMax - (wMax - wbal) * Math.exp(-dt / tau);
+  }
+}
+
+// ===================== GPX PARSING =====================
+function parseGPX(text) {
+  const parser = new DOMParser();
+  const xml = parser.parseFromString(text, 'text/xml');
+  const trkpts = xml.querySelectorAll('trkpt, rtept');
+  if (trkpts.length < 2) return null;
+
+  const pts = [];
+  let cumDist = 0;
+  let prev = null;
+  for (const pt of trkpts) {
+    const lat = parseFloat(pt.getAttribute('lat'));
+    const lon = parseFloat(pt.getAttribute('lon'));
+    const eleEl = pt.querySelector('ele');
+    const ele = eleEl ? parseFloat(eleEl.textContent) : 0;
+    if (isNaN(lat) || isNaN(lon)) continue;
+    if (prev) cumDist += haversine(prev.lat, prev.lon, lat, lon);
+    pts.push({ dist_m: cumDist, elev_m: ele });
+    prev = { lat, lon };
+  }
+  return pts;
+}
+
+function haversine(lat1, lon1, lat2, lon2) {
+  const R = 6371000;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLon/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+function smoothElev(pts, windowSize=5) {
+  return pts.map((p, i) => {
+    const lo = Math.max(0, i - windowSize);
+    const hi = Math.min(pts.length - 1, i + windowSize);
+    const avg = pts.slice(lo, hi+1).reduce((s, x) => s + x.elev_m, 0) / (hi - lo + 1);
+    return { dist_m: p.dist_m, elev_m: avg };
+  });
+}
+
+// ===================== SEGMENT SETUP =====================
+function useManualSegment() {
+  const distKm = parseFloat(document.getElementById('manual-dist').value) || 5;
+  const grade = parseFloat(document.getElementById('manual-grade').value) / 100 || 0;
+  const distM = distKm * 1000;
+  const steps = 100;
+  segmentPoints = [];
+  for (let i = 0; i <= steps; i++) {
+    const d = (i / steps) * distM;
+    segmentPoints.push({ dist_m: d, elev_m: d * grade });
+  }
+  updateSegmentUI();
+  drawElevation();
+}
+
+function updateSegmentUI() {
+  if (segmentPoints.length < 2) return;
+  const distM = segmentPoints[segmentPoints.length - 1].dist_m;
+  const elevGain = segmentPoints.reduce((acc, p, i) => {
+    if (i === 0) return acc;
+    const dh = p.elev_m - segmentPoints[i-1].elev_m;
+    return acc + (dh > 0 ? dh : 0);
+  }, 0);
+  document.getElementById('seg-dist').textContent = (distM/1000).toFixed(2) + ' km';
+  document.getElementById('seg-elev').textContent = Math.round(elevGain) + ' m';
+  document.getElementById('gpx-status').textContent = 'Ready';
+  document.getElementById('gpx-status').className = 'badge badge-green';
+}
+
+function drawElevation() {
+  const canvas = document.getElementById('elev-canvas');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.clientWidth || 300;
+  const H = 100;
+  canvas.width = W * window.devicePixelRatio;
+  canvas.height = H * window.devicePixelRatio;
+  ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+  ctx.clearRect(0, 0, W, H);
+  if (segmentPoints.length < 2) return;
+
+  const maxD = segmentPoints[segmentPoints.length-1].dist_m;
+  const elevs = segmentPoints.map(p => p.elev_m);
+  const minE = Math.min(...elevs);
+  const maxE = Math.max(...elevs);
+  const rangeE = maxE - minE || 1;
+  const pad = 10;
+
+  const toX = d => (d / maxD) * (W - pad*2) + pad;
+  const toY = e => H - pad - ((e - minE) / rangeE) * (H - pad*2);
+
+  ctx.beginPath();
+  segmentPoints.forEach((p, i) => {
+    const x = toX(p.dist_m), y = toY(p.elev_m);
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  });
+  ctx.lineTo(toX(maxD), H - pad);
+  ctx.lineTo(toX(0), H - pad);
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(88,166,255,0.15)';
+  ctx.fill();
+  ctx.beginPath();
+  segmentPoints.forEach((p, i) => {
+    const x = toX(p.dist_m), y = toY(p.elev_m);
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  });
+  ctx.strokeStyle = '#58a6ff';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+}
+
+// ===================== RIDER MANAGEMENT =====================
+function addRider() {
+  const id = riderId++;
+  const num = riders.length + 1;
+  const color = riderColors[(num-1) % riderColors.length];
+  riders.push({ id, num, name: `Rider ${num}`, height: 175, weight: 70, cp: 280, wprime: 20000, color });
+  renderRiders();
+}
+
+function removeRider(id) {
+  riders = riders.filter(r => r.id !== id);
+  riders.forEach((r, i) => { r.num = i + 1; r.color = riderColors[i % riderColors.length]; });
+  renderRiders();
+}
+
+function renderRiders() {
+  const c = document.getElementById('riders-container');
+  document.getElementById('rider-count').textContent = `( ${riders.length} )`;
+  const mode = document.querySelector('input[name="pl-mode"]:checked').value;
+  const showLeadoutHint = (mode === 'leadout' || mode === 'auto') && riders.length >= 2;
+
+  if (riders.length === 0) {
+    c.innerHTML = '<p class="info-text">Add at least 2 riders. Order = paceline position.</p>';
+    return;
+  }
+
+  const hint = showLeadoutHint
+    ? `<p class="info-text" id="leadout-hint" style="margin-bottom:10px;color:var(--purple)">Lead-out mode: <strong id="sprinter-name">${riders[riders.length-1].name}</strong> is the protected sprinter (last in list).</p>`
+    : '';
+
+  c.innerHTML = hint + riders.map((r, i) => `
+    <div class="rider-card${i===0?' open':''}" id="rcard-${r.id}">
+      <div class="rider-card-head" onclick="toggleRider(${r.id})">
+        <div class="rider-num" style="background:${r.color}">${r.num}</div>
+        <span class="rider-name-display" id="rname-display-${r.id}">${r.name}</span>
+        ${showLeadoutHint && i === riders.length - 1 ? '<span style="font-size:10px;color:var(--purple);font-family:var(--mono);margin-right:4px">SPRINTER</span>' : ''}
+        <button class="btn btn-sm btn-danger" onclick="event.stopPropagation();removeRider(${r.id})">✕</button>
+      </div>
+      <div class="rider-card-body">
+        <div class="form-group">
+          <label>Name</label>
+          <input type="text" value="${r.name}" oninput="updateRider(${r.id},'name',this.value)">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Weight (kg)</label>
+            <input type="number" value="${r.weight}" min="40" max="130" oninput="updateRider(${r.id},'weight',+this.value)">
+          </div>
+          <div class="form-group">
+            <label>Height (cm)</label>
+            <input type="number" value="${r.height}" min="140" max="220" oninput="updateRider(${r.id},'height',+this.value)">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Critical Power (W)</label>
+            <input type="number" value="${r.cp}" min="100" max="600" oninput="updateRider(${r.id},'cp',+this.value)">
+          </div>
+          <div class="form-group">
+            <label>W' (kJ)</label>
+            <input type="number" value="${r.wprime/1000}" min="5" max="50" step="0.5" oninput="updateRider(${r.id},'wprime',+this.value*1000)">
+          </div>
+        </div>
+        <p class="info-text" id="rinfo-${r.id}">CP: ${r.cp}W | W': ${(r.wprime/1000).toFixed(1)} kJ | ~${Math.round(r.wprime/(r.cp*0.2))}s max sprint effort above CP+20%</p>
+      </div>
+    </div>
+  `).join('');
+}
+
+function toggleRider(id) {
+  document.getElementById(`rcard-${id}`).classList.toggle('open');
+}
+
+function updateRider(id, field, val) {
+  const r = riders.find(r => r.id === id);
+  if (!r) return;
+  r[field] = val;
+  if (field === 'name') {
+    const d = document.getElementById(`rname-display-${id}`);
+    if (d) d.textContent = val;
+    // last rider's name feeds the lead-out sprinter hint
+    if (riders[riders.length - 1].id === id) {
+      const s = document.getElementById('sprinter-name');
+      if (s) s.textContent = val;
+    }
+  }
+  if (field === 'cp' || field === 'wprime') {
+    const info = document.getElementById(`rinfo-${id}`);
+    if (info) info.textContent = `CP: ${r.cp}W | W': ${(r.wprime/1000).toFixed(1)} kJ | ~${Math.round(r.wprime/(r.cp*0.2))}s max sprint effort above CP+20%`;
+  }
+}
+
+function updateModeUI() {
+  const mode = document.querySelector('input[name="pl-mode"]:checked').value;
+  ['auto','leadout','rotating'].forEach(m => {
+    document.getElementById(`mode-opt-${m}`).classList.toggle('selected', m === mode);
+  });
+  renderRiders();
+}
+
+// ===================== SIMULATION PARAMS =====================
+function buildSimParams() {
+  const tempC = parseFloat(document.getElementById('temp').value) || 20;
+  const altM  = parseFloat(document.getElementById('altitude').value) || 200;
+  const windKph = parseFloat(document.getElementById('wind-speed').value) || 0;
+  const rho = airDensity(tempC, altM);
+  const windMps = windKph / 3.6;
+
+  const gradeSegs = [];
+  for (let i = 1; i < segmentPoints.length; i++) {
+    const dd = segmentPoints[i].dist_m - segmentPoints[i-1].dist_m;
+    const dh = segmentPoints[i].elev_m - segmentPoints[i-1].elev_m;
+    const grade = dd > 0 ? dh / dd : 0;
+    gradeSegs.push({
+      dist_m: segmentPoints[i-1].dist_m,
+      len_m: dd,
+      grade: Math.max(-0.15, Math.min(0.15, grade))
+    });
+  }
+
+  const totalDistM = segmentPoints[segmentPoints.length - 1].dist_m;
+  const BIKE_KG = 8;
+  const riderMass = riders.map(r => r.weight + BIKE_KG);
+
+  function avgGradeAhead(fromDist, lenM) {
+    let totalGrade = 0, totalLen = 0;
+    for (const seg of gradeSegs) {
+      if (seg.dist_m + seg.len_m <= fromDist) continue;
+      if (seg.dist_m >= fromDist + lenM) break;
+      const start = Math.max(seg.dist_m, fromDist);
+      const end   = Math.min(seg.dist_m + seg.len_m, fromDist + lenM);
+      const l = end - start;
+      totalGrade += seg.grade * l;
+      totalLen   += l;
+    }
+    return totalLen > 0 ? totalGrade / totalLen : 0;
+  }
+
+  return { rho, windMps, totalDistM, riderMass, avgGradeAhead };
+}
+
+// ===================== OPTIMIZER CORE =====================
+// Pace by POWER, not speed. The front rider holds a target power (so the group
+// naturally slows on climbs and speeds up on descents — no power spikes), and
+// the front rotates greedily to whoever can best afford the effort. W' is the
+// only limiter, so a rider whose CP exceeds the target can lead indefinitely
+// while recovering, and strong riders pull far longer than weak ones.
+//
+// Hill optimization: the target power is modulated by gradient — pushed up on
+// climbs (where time is lost to low speed) and eased on descents (where extra
+// watts buy almost nothing). GRADE_POWER_GAIN sets how aggressively; it's
+// clamped so descents never coast to zero and climbs don't blow the team up.
+// The optimizer searches the base (flat-ground) target power: rotating maximizes
+// the sustainable power; lead-out scans for the power that minimizes the
+// protected rider's time.
+function simAtPower(targetP, params, opts) {
+  const { rho, windMps, totalDistM, riderMass, avgGradeAhead } = params;
+  const { mode, protectedIdx } = opts;
+  const DT = 1, WBAL_FLOOR = 0;
+  const GRADE_POWER_GAIN = 3.0, GF_MIN = 0.6, GF_MAX = 1.5;
+  const gradeFactor = g => Math.max(GF_MIN, Math.min(GF_MAX, 1 + GRADE_POWER_GAIN * g));
+  const wbal = riders.map(r => r.wprime);
+  const inGroup = riders.map(() => true);
+  const pulls = [];
+  let elapsed = 0, distCovered = 0;
+  const baseOrder = riders.map((_, i) => i);
+  let rotateQueue = baseOrder.slice(); // round-robin order for the rotating paceline
+  // Each turn on the front is capped, then the rider peels to the back so the
+  // rotation keeps moving and everyone gets a turn. The cap is per-rider and
+  // scales with effective sustainable power (CP + W' over the effort): identical
+  // riders take equal turns; a stronger rider earns a proportionally longer one
+  // and so covers more distance. A rider who buries their W' rotates off early.
+  const avgMass = riderMass.reduce((a, b) => a + b, 0) / riderMass.length;
+  const vEstFlat = speedForPower(targetP, 0, rho, avgMass, windMps);
+  const estTime = totalDistM / Math.max(1, vEstFlat);
+  const baseCap = Math.max(8, Math.min(45, estTime / riders.length));
+  const EP = riders.map(r => r.cp + r.wprime / Math.max(30, estTime));
+  const avgEP = EP.reduce((a, b) => a + b, 0) / EP.length;
+  const pullCap = EP.map(ep => Math.max(5, baseCap * ep / avgEP));
+  let guard = 0;
+  const MAX_ITERS = 200000;
+
+  while (distCovered < totalDistM - 1 && guard++ < MAX_ITERS) {
+    // ----- pick the front rider and the current paceline order -----
+    let frontIdx, line;
+    if (mode === 'leadout') {
+      frontIdx = baseOrder.find(i => inGroup[i] && i !== protectedIdx && wbal[i] > WBAL_FLOOR);
+      if (frontIdx === undefined) break; // helpers spent -> protected finishes solo
+      line = baseOrder.filter(i => inGroup[i]);
+    } else {
+      rotateQueue = rotateQueue.filter(i => inGroup[i]); // drop anyone who fell off
+      if (rotateQueue.length === 0) return { feasible: false };
+      frontIdx = rotateQueue[0];
+      line = rotateQueue.slice();
+    }
+
+    const fr = riders[frontIdx], fm = riderMass[frontIdx];
+    const wbalStart = wbal[frontIdx];
+
+    // can the chosen front even hold the target effort on this grade right now?
+    const g0 = avgGradeAhead(distCovered, 20);
+    const P0 = targetP * gradeFactor(g0);
+    if (P0 > fr.cp && wbalStart <= WBAL_FLOOR) {
+      if (mode === 'leadout') { inGroup[frontIdx] = false; continue; }
+      return { feasible: false }; // nobody can sustain the target -> infeasible
+    }
+
+    let pullDist = 0, pullTime = 0, energyJ = 0, infeasible = false;
+    while (distCovered + pullDist < totalDistM - 1) {
+      const g = avgGradeAhead(distCovered + pullDist, 20);
+      const Pfront = Math.max(0, targetP * gradeFactor(g));
+      const wbNext = wbalAfterDt(wbal[frontIdx], fr.wprime, fr.cp, Pfront, DT);
+      if (Pfront > fr.cp && wbNext <= WBAL_FLOOR && pullTime > 0) break; // front buried -> rotate
+
+      const v = speedForPower(Pfront, g, rho, fm, windMps); // group speed set by the front
+      wbal[frontIdx] = Math.max(WBAL_FLOOR, wbNext);
+      energyJ += Pfront * DT;
+
+      const draftees = line.filter(i => inGroup[i] && i !== frontIdx);
+      draftees.forEach((rIdx, k) => {
+        const pos = k + 1;
+        const Pd = powerForSpeed(v, g, rho, riderMass[rIdx], windMps) * getDraftFactor(pos);
+        const next = wbalAfterDt(wbal[rIdx], riders[rIdx].wprime, riders[rIdx].cp, Pd, DT);
+        if (Pd > riders[rIdx].cp && next <= WBAL_FLOOR) {
+          wbal[rIdx] = WBAL_FLOOR; inGroup[rIdx] = false; // dropped from the wheel
+          if (rIdx === protectedIdx) infeasible = true;
+        } else {
+          wbal[rIdx] = Math.max(WBAL_FLOOR, Math.min(riders[rIdx].wprime, next));
+        }
+      });
+      if (infeasible) return { feasible: false };
+
+      pullDist += v * DT;
+      pullTime += DT;
+      if (Pfront > fr.cp && wbal[frontIdx] <= WBAL_FLOOR) break; // buried this tick
+      if (mode !== 'leadout' && pullTime >= pullCap[frontIdx]) break; // turn's up -> rotate to the back
+    }
+
+    if (pullTime >= 1) {
+      pulls.push({
+        rider_idx: frontIdx, rider: fr,
+        power_front: Math.round(energyJ / pullTime),
+        duration_s: pullTime, dist_m: pullDist,
+        wbal_start: wbalStart, wbal_end: wbal[frontIdx], wbal_all: [...wbal],
+        elapsed_start: elapsed, speed_ms: pullDist / pullTime,
+        pullType: mode === 'leadout' ? 'leadout' : 'pull'
+      });
+    }
+    distCovered += pullDist;
+    elapsed += pullTime;
+    if (mode === 'leadout') {
+      inGroup[frontIdx] = false; // peel off permanently
+    } else {
+      // rotate to the back of the line
+      rotateQueue = rotateQueue.filter(i => inGroup[i] && i !== frontIdx);
+      if (inGroup[frontIdx]) rotateQueue.push(frontIdx);
+    }
+  }
+
+  // ----- lead-out: protected rider finishes solo (paced to the line) -----
+  if (mode === 'leadout' && distCovered < totalDistM - 1) {
+    const sIdx = protectedIdx, lr = riders[sIdx], lm = riderMass[sIdx];
+    const wbalStart = wbal[sIdx];
+    let sDist = 0, sTime = 0, energyJ = 0;
+    while (distCovered + sDist < totalDistM - 1 && sTime < 3600) {
+      const remainM = totalDistM - distCovered - sDist;
+      const g = avgGradeAhead(distCovered + sDist, 20);
+      const vEst = speedForPower(lr.cp, g, rho, lm, windMps);
+      const tLeft = remainM / Math.max(1, vEst);
+      const P = Math.min(lr.cp + wbal[sIdx] / Math.max(5, tLeft), lr.cp * 1.8);
+      const v = speedForPower(P, g, rho, lm, windMps);
+      wbal[sIdx] = Math.max(0, wbalAfterDt(wbal[sIdx], lr.wprime, lr.cp, P, DT));
+      energyJ += P * DT;
+      sDist += v * DT; sTime += DT;
+    }
+    if (sTime >= 1) {
+      pulls.push({
+        rider_idx: sIdx, rider: lr,
+        power_front: Math.round(energyJ / sTime),
+        duration_s: sTime, dist_m: sDist,
+        wbal_start: wbalStart, wbal_end: wbal[sIdx], wbal_all: [...wbal],
+        elapsed_start: elapsed, speed_ms: sDist / Math.max(1, sTime),
+        pullType: 'sprint'
+      });
+      distCovered += sDist; elapsed += sTime;
+    }
+  }
+
+  return { feasible: distCovered >= totalDistM - 1, pulls, elapsed, distCovered, totalDistM,
+           targetP, avgSpeed: elapsed > 0 ? distCovered / elapsed : 0 };
+}
+
+// ===================== ROTATING PACELINE =====================
+function runRotatingSimulation(params) {
+  const protectedIdx = riders.length - 1;
+  const opts = { mode: 'rotating', protectedIdx };
+  // Binary-search the highest base target power the whole team can hold end-to-end.
+  const maxCp = Math.max(...riders.map(r => r.cp));
+  let lo = 40, hi = maxCp * 2.5, best = null;
+  let loRes = simAtPower(lo, params, opts), g = 0;
+  while (!loRes.feasible && lo > 5 && g++ < 12) { lo *= 0.5; loRes = simAtPower(lo, params, opts); }
+  if (loRes.feasible) best = loRes;
+  for (let i = 0; i < 30; i++) {
+    const mid = (lo + hi) / 2;
+    const res = simAtPower(mid, params, opts);
+    if (res.feasible) { best = res; lo = mid; } else { hi = mid; }
+  }
+  const result = best || simAtPower(lo, params, opts);
+  return { ...result, mode: 'rotating', totalDistM: params.totalDistM };
+}
+
+// ===================== LEAD-OUT SIMULATION =====================
+function runLeadoutSimulation(params) {
+  const protectedIdx = riders.length - 1;
+  const opts = { mode: 'leadout', protectedIdx };
+  // Helpers tow the protected rider then peel off; the protected rider finishes
+  // solo. Total time isn't monotonic in the target power (too high burns the
+  // helpers out instantly, too low wastes them), so scan then refine the minimum.
+  const maxCp = Math.max(...riders.map(r => r.cp));
+  let best = null, bestP = null;
+  const consider = (p) => {
+    if (p <= 0) return;
+    const r = simAtPower(p, params, opts);
+    if (r.feasible && (!best || r.elapsed < best.elapsed)) { best = r; bestP = p; }
+  };
+  const lo = 100, hi = maxCp * 1.8, step = Math.max(10, (hi - lo) / 40);
+  for (let p = lo; p <= hi; p += step) consider(p);
+  if (bestP != null) {
+    for (let p = bestP - step; p <= bestP + step; p += step / 5) consider(p);
+  }
+  const result = best || simAtPower(maxCp, params, opts);
+  return { ...result, mode: 'leadout', totalDistM: params.totalDistM };
+}
+
+// ===================== OPTIMIZER ENTRY POINT =====================
+function runOptimizer() {
+  if (segmentPoints.length < 2) {
+    alert('Please set a segment first (upload GPX or use manual segment).');
+    return;
+  }
+  if (riders.length < 2) {
+    alert('Please add at least 2 riders.');
+    return;
+  }
+  for (const r of riders) {
+    if (!r.cp || !r.wprime || r.cp < 50) {
+      alert(`Check CP and W' values for ${r.name}.`);
+      return;
+    }
+  }
+
+  const params = buildSimParams();
+  const mode = document.querySelector('input[name="pl-mode"]:checked').value;
+
+  if (mode === 'auto') {
+    const leadout  = runLeadoutSimulation(params);
+    const rotating = runRotatingSimulation(params);
+    renderComparison(leadout, rotating);
+  } else if (mode === 'leadout') {
+    renderResults(runLeadoutSimulation(params));
+  } else {
+    renderResults(runRotatingSimulation(params));
+  }
+}
+
+// ===================== COMPARISON RENDERING =====================
+function renderComparison(leadout, rotating) {
+  const leadoutWins = leadout.elapsed < rotating.elapsed;
+  const diff = Math.abs(rotating.elapsed - leadout.elapsed);
+  const winner = leadoutWins ? leadout : rotating;
+  const loser  = leadoutWins ? rotating : leadout;
+
+  const modeLabel = m => m === 'leadout' ? 'Lead-out Train' : 'Rotating Paceline';
+  const modeColor = m => m === 'leadout' ? 'var(--orange)' : 'var(--accent)';
+
+  const panel = document.getElementById('results-panel');
+
+  const comparisonHTML = `
+    <div class="card" style="margin-bottom:20px;border-color:var(--green)">
+      <div class="card-head">
+        <h3>Strategy Comparison</h3>
+        <span class="badge badge-green">Auto</span>
+      </div>
+      <div class="card-body">
+        <div class="compare-grid">
+          <div class="compare-box ${leadoutWins ? 'winner' : 'runner'}">
+            <div class="compare-label" style="color:var(--orange)">Lead-out Train ${leadoutWins ? '✓' : ''}</div>
+            <div class="compare-time" style="color:${leadoutWins ? 'var(--green)' : 'var(--text2)'}">
+              ${formatTime(leadout.elapsed)}
+              ${leadoutWins ? '<span class="compare-winner-badge">FASTER</span>' : ''}
+            </div>
+            <div style="font-size:11px;color:var(--text3);margin-top:4px">${leadout.pulls.length} segments · ${(leadout.distCovered/1000).toFixed(2)} km</div>
+          </div>
+          <div class="compare-box ${!leadoutWins ? 'winner' : 'runner'}">
+            <div class="compare-label" style="color:var(--accent)">Rotating Paceline ${!leadoutWins ? '✓' : ''}</div>
+            <div class="compare-time" style="color:${!leadoutWins ? 'var(--green)' : 'var(--text2)'}">
+              ${formatTime(rotating.elapsed)}
+              ${!leadoutWins ? '<span class="compare-winner-badge">FASTER</span>' : ''}
+            </div>
+            <div style="font-size:11px;color:var(--text3);margin-top:4px">${rotating.pulls.length} segments · ${(rotating.distCovered/1000).toFixed(2)} km</div>
+          </div>
+        </div>
+        <div style="padding:10px 12px;background:var(--bg);border-radius:var(--radius);font-size:12px;color:var(--text2)">
+          <span style="color:${modeColor(winner.mode)};font-weight:600">${modeLabel(winner.mode)}</span>
+          saves <span style="font-family:var(--mono);font-weight:700;color:var(--green)">${diff.toFixed(1)}s</span>
+          for ${riders[riders.length-1].name}.
+          ${diff < 5 ? ' Difference is marginal — terrain and rider fitness may change the outcome.' : ''}
+        </div>
+      </div>
+    </div>
+  `;
+
+  panel.innerHTML = comparisonHTML;
+  renderResultsInto(winner, panel, true);
+}
+
+// ===================== RESULTS RENDERING =====================
+function renderResults(result) {
+  renderResultsInto(result, document.getElementById('results-panel'), false);
+}
+
+function renderResultsInto(result, container, append) {
+  const { pulls, elapsed, distCovered, mode, totalDistM } = result;
+  const avgSpeed = distCovered / elapsed * 3.6;
+  const mm = Math.floor(elapsed / 60);
+  const ss = Math.round(elapsed % 60);
+
+  const modeLabel = mode === 'leadout' ? 'Lead-out Train' : 'Rotating Paceline';
+  const modeBadgeClass = mode === 'leadout' ? 'badge-orange' : 'badge-blue';
+  const modeColor = mode === 'leadout' ? 'var(--orange)' : 'var(--accent)';
+
+  // Timeline
+  const timelineHTML = `
+    <div class="tl-bar-wrap">
+      ${pulls.map(p => {
+        const pct = (p.duration_s / elapsed * 100).toFixed(1);
+        if (parseFloat(pct) < 1) return '';
+        const opacity = p.pullType === 'sprint' ? '1' : p.pullType === 'leadout' ? '0.85' : '1';
+        const label = p.pullType === 'sprint' ? '⚡' : `R${p.rider.num}`;
+        return `<div class="tl-seg" style="width:${pct}%;background:${p.rider.color};opacity:${opacity};min-width:2px"
+          title="${p.rider.name}: ${Math.round(p.duration_s)}s @ ${p.power_front}W${p.pullType === 'sprint' ? ' (sprint)' : p.pullType === 'leadout' ? ' (peels off)' : ''}">
+          ${parseFloat(pct) > 5 ? label : ''}
+        </div>`;
+      }).join('')}
+    </div>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:6px">
+      ${riders.map(r => `<span style="font-size:11px;color:${r.color};font-family:var(--mono)">■ ${r.name}</span>`).join('')}
+    </div>
+  `;
+
+  // Pull table
+  const tableHTML = pulls.map((p, i) => {
+    const wbalPct = Math.round((p.wbal_end / p.rider.wprime) * 100);
+    const barColor = wbalPct > 50 ? '#3fb950' : wbalPct > 20 ? '#f0883e' : '#f85149';
+    let actionBadge = '';
+    if (p.pullType === 'sprint') {
+      actionBadge = `<span class="badge" style="background:rgba(188,140,255,0.15);color:var(--purple);margin-left:6px">⚡ SPRINT</span>`;
+    } else if (p.pullType === 'leadout') {
+      actionBadge = `<span class="badge badge-orange" style="margin-left:6px">PEELS OFF</span>`;
+    }
+    return `<tr>
+      <td><span style="font-family:var(--mono);color:var(--text3)">${i+1}</span></td>
+      <td>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <div style="width:10px;height:10px;border-radius:50%;background:${p.rider.color};flex-shrink:0"></div>
+          <span style="font-weight:500">${p.rider.name}</span>
+          ${actionBadge}
+        </div>
+      </td>
+      <td style="font-family:var(--mono);color:${modeColor}">${p.power_front}W</td>
+      <td style="font-family:var(--mono)">${Math.round(p.duration_s)}s</td>
+      <td style="font-family:var(--mono)">${(p.speed_ms * 3.6).toFixed(1)} km/h</td>
+      <td style="font-family:var(--mono)">${(p.dist_m/1000).toFixed(2)} km</td>
+      <td>
+        <span style="font-family:var(--mono);font-size:11px;color:${barColor}">${wbalPct}%</span>
+        <div class="wbal-bar"><div class="wbal-fill" style="width:${Math.max(0,wbalPct)}%;background:${barColor}"></div></div>
+      </td>
+      <td style="font-family:var(--mono);color:var(--text3)">${formatTime(p.elapsed_start)}</td>
+    </tr>`;
+  }).join('');
+
+  // Per-rider summary
+  const riderSummaryHTML = riders.map(r => {
+    const myPulls = pulls.filter(p => p.rider.id === r.id && p.pullType !== 'sprint');
+    const mySprint = pulls.find(p => p.rider.id === r.id && p.pullType === 'sprint');
+    const totalPullT = myPulls.reduce((s, p) => s + p.duration_s, 0);
+    const avgP = myPulls.length > 0 ? Math.round(myPulls.reduce((s, p) => s + p.power_front, 0) / myPulls.length) : 0;
+    const pct = Math.round(totalPullT / elapsed * 100);
+    const finalWbal = pulls.length > 0
+      ? (pulls[pulls.length-1].wbal_all ? pulls[pulls.length-1].wbal_all[riders.indexOf(r)] : null)
+      : r.wprime;
+    const finalWbalPct = finalWbal !== null ? Math.round(finalWbal / r.wprime * 100) : '?';
+
+    return `<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px;display:flex;align-items:center;gap:12px;margin-bottom:8px">
+      <div style="width:12px;height:36px;border-radius:3px;background:${r.color};flex-shrink:0"></div>
+      <div style="flex:1">
+        <div style="font-weight:500;font-size:13px">${r.name}${mySprint ? ' <span style="font-size:10px;color:var(--purple);font-family:var(--mono)">⚡ SPRINTER</span>' : ''}</div>
+        <div style="font-size:11px;color:var(--text2)">CP: ${r.cp}W | W': ${(r.wprime/1000).toFixed(1)}kJ</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-family:var(--mono);font-size:14px;color:${r.color}">${myPulls.length} pull${myPulls.length!==1?'s':''}${mySprint?' + sprint':''}</div>
+        <div style="font-size:11px;color:var(--text2)">${Math.round(totalPullT)}s (${pct}%) · avg ${avgP || '—'}W</div>
+        <div style="font-size:11px;color:var(--text3)">W' finish: ${finalWbalPct}%</div>
+      </div>
+    </div>`;
+  }).join('');
+
+  const html = `
+    <div class="results-header">
+      <div>
+        <h2 style="font-family:var(--mono);font-size:16px;color:var(--text)">Optimal Pull Schedule</h2>
+        <p style="font-size:12px;color:var(--text2)">${(totalDistM/1000).toFixed(2)} km · ${pulls.length} segments · ${riders.length} riders</p>
+      </div>
+      <span class="badge ${modeBadgeClass}">${modeLabel}</span>
+    </div>
+
+    <div class="stat-grid">
+      <div class="stat">
+        <div class="stat-label">Total Time</div>
+        <div class="stat-value">${mm}:${ss.toString().padStart(2,'0')}</div>
+        <div class="stat-unit">mm:ss</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Avg Speed</div>
+        <div class="stat-value">${avgSpeed.toFixed(1)}</div>
+        <div class="stat-unit">km/h</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Segments</div>
+        <div class="stat-value">${pulls.length}</div>
+        <div class="stat-unit">${mode === 'leadout' ? 'pulls + sprint' : 'rotations'}</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Dist Covered</div>
+        <div class="stat-value">${(distCovered/1000).toFixed(2)}</div>
+        <div class="stat-unit">km</div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:20px">
+      <div class="card-head"><h3>Paceline Timeline</h3></div>
+      <div class="card-body">
+        <p style="font-size:11px;color:var(--text3);margin-bottom:8px">Width proportional to duration.${mode === 'leadout' ? ' Faded = lead-out pull. ⚡ = sprint.' : ''}</p>
+        ${timelineHTML}
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:20px">
+      <div class="card-head"><h3>W' Balance Over Time</h3></div>
+      <div class="card-body">
+        <canvas id="wbal-canvas" height="160"></canvas>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:20px">
+      <div class="card-head"><h3>Rider Summary</h3></div>
+      <div class="card-body">${riderSummaryHTML}</div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <h3>Detailed Pull Schedule</h3>
+        <span style="font-size:11px;color:var(--text3)">W' remaining after each segment</span>
+      </div>
+      <div class="card-body" style="padding:0;overflow-x:auto">
+        <table class="pull-table">
+          <thead>
+            <tr>
+              <th>#</th><th>Rider</th><th>Power</th><th>Duration</th>
+              <th>Speed</th><th>Distance</th><th>W' Left</th><th>At</th>
+            </tr>
+          </thead>
+          <tbody>${tableHTML}</tbody>
+        </table>
+      </div>
+    </div>
+  `;
+
+  if (append) {
+    const div = document.createElement('div');
+    div.innerHTML = html;
+    container.appendChild(div);
+  } else {
+    container.innerHTML = html;
+  }
+
+  drawWbalChart(pulls, elapsed);
+}
+
+// ===================== HELPERS =====================
+function formatTime(seconds) {
+  const m = Math.floor(seconds / 60);
+  const s = Math.round(seconds % 60);
+  return `${m}:${s.toString().padStart(2,'0')}`;
+}
+
+function drawWbalChart(pulls, totalTime) {
+  const canvas = document.getElementById('wbal-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.clientWidth || 600;
+  const H = 160;
+  canvas.width = W * window.devicePixelRatio;
+  canvas.height = H * window.devicePixelRatio;
+  ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+  ctx.clearRect(0, 0, W, H);
+
+  const pad = { l: 28, r: 8, t: 8, b: 20 };
+  const innerW = W - pad.l - pad.r;
+  const innerH = H - pad.t - pad.b;
+
+  const toX = t => pad.l + (t / totalTime) * innerW;
+  const toY = (wb, maxWp) => pad.t + innerH - (Math.max(0, wb) / maxWp) * innerH;
+
+  const riderHistory = {};
+  riders.forEach(r => { riderHistory[r.id] = [{ t: 0, wb: r.wprime }]; });
+
+  let t = 0;
+  pulls.forEach(p => {
+    t += p.duration_s;
+    if (p.wbal_all) {
+      riders.forEach((r, ri) => {
+        riderHistory[r.id].push({ t, wb: p.wbal_all[ri] });
+      });
+    }
+  });
+
+  // Grid lines
+  ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+  ctx.lineWidth = 1;
+  for (let pct = 0; pct <= 100; pct += 25) {
+    const y = pad.t + innerH - (pct / 100) * innerH;
+    ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(W - pad.r, y); ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,0.25)';
+    ctx.font = '9px monospace';
+    ctx.textAlign = 'right';
+    ctx.fillText(`${pct}%`, pad.l - 3, y + 3);
+  }
+
+  // Pull separators
+  let ct = 0;
+  pulls.forEach((p, i) => {
+    ct += p.duration_s;
+    if (i < pulls.length - 1) {
+      const x = toX(ct);
+      const isSprintBoundary = p.pullType === 'leadout' || p.pullType === 'sprint';
+      ctx.strokeStyle = isSprintBoundary ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.08)';
+      ctx.lineWidth = isSprintBoundary ? 1.5 : 1;
+      ctx.setLineDash(isSprintBoundary ? [4, 2] : [3, 3]);
+      ctx.beginPath(); ctx.moveTo(x, pad.t); ctx.lineTo(x, H - pad.b); ctx.stroke();
+      ctx.setLineDash([]);
+    }
+  });
+
+  // Rider W' lines
+  riders.forEach(r => {
+    const hist = riderHistory[r.id];
+    if (!hist || hist.length < 2) return;
+    ctx.beginPath();
+    hist.forEach((pt, i) => {
+      const x = toX(pt.t);
+      const y = toY(pt.wb, r.wprime);
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    });
+    ctx.strokeStyle = r.color;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(toX(0), toY(r.wprime, r.wprime), 3, 0, Math.PI * 2);
+    ctx.fillStyle = r.color;
+    ctx.fill();
+  });
+
+  // X axis labels
+  ctx.fillStyle = 'rgba(255,255,255,0.3)';
+  ctx.font = '9px monospace';
+  ctx.textAlign = 'center';
+  const labelStep = Math.ceil(totalTime / 5 / 30) * 30;
+  for (let lt = 0; lt <= totalTime; lt += labelStep) {
+    ctx.fillText(formatTime(lt), toX(lt), H - 4);
+  }
+
+  // Legend
+  riders.forEach(r => {
+    ctx.fillStyle = r.color;
+    ctx.font = '10px monospace';
+    ctx.textAlign = 'left';
+    const last = riderHistory[r.id][riderHistory[r.id].length - 1];
+    const y = toY(last.wb, r.wprime);
+    ctx.fillText(r.name.substring(0, 10), W - pad.r - 2, Math.max(pad.t + 10, Math.min(H - pad.b - 2, y)));
+  });
+}
+
+// ===================== GPX FILE HANDLING =====================
+const dropZone = document.getElementById('drop-zone');
+const gpxInput = document.getElementById('gpx-file');
+
+dropZone.addEventListener('click', () => gpxInput.click());
+gpxInput.addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (file) handleGPXFile(file);
+});
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('drag');
+  const file = e.dataTransfer.files[0];
+  if (file) handleGPXFile(file);
+});
+
+function handleGPXFile(file) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    const pts = parseGPX(e.target.result);
+    if (!pts || pts.length < 2) {
+      alert('Could not parse GPX file. Make sure it contains track points with lat/lon.');
+      return;
+    }
+    segmentPoints = smoothElev(pts, 3);
+    document.getElementById('gpx-filename').textContent = file.name;
+    updateSegmentUI();
+    drawElevation();
+  };
+  reader.readAsText(file);
+}
+
+// ===================== INIT =====================
+useManualSegment();
+addRider();
+addRider();
+riders[0].name = 'Rider 1'; riders[0].cp = 290; riders[0].wprime = 22000; riders[0].weight = 72;
+riders[1].name = 'Rider 2'; riders[1].cp = 260; riders[1].wprime = 18000; riders[1].weight = 68;
+renderRiders();
+</script>
+</body>
+</html>
